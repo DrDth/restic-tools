@@ -1,11 +1,11 @@
-#! /bin/bash
+#!/bin/bash
 set -uo pipefail
 
 #backup li run 
 #backup li 
 
 display_usage() { 
-	echo "Usage: $0 <repo> (local|monitor <host> <warning> <critical>|restic arguments)" >&2
+	echo "Usage: $0 <repo> (local|monitor|cleanup|unlock|forget|do_forget <host> <warning> <critical>|restic arguments)" >&2
 } 
 
 if [ "$#" -lt 2 ]; then
@@ -16,7 +16,7 @@ fi
 
 TARGET=$1
 ACTION=$2
-RESTIC=$(which restic)
+RESTIC="/usr/local/bin/restic"
 CURL=$(which curl)
 
 check_config() {
@@ -45,6 +45,14 @@ handle_params () {
     		do_local_backup
 	elif [ $2 == "monitor" ]; then
 		do_monitor $@
+	elif [ $2 == "cleanup" ]; then
+		do_cleanup
+	elif [ $2 == "unlock" ]; then
+                do_unlock
+	elif [ $2 == "forget" ]; then
+                list_forget
+	elif [ $2 == "do_forget" ]; then
+                do_forget
 	else
 		shift 1
 		$RESTIC $@
@@ -75,6 +83,35 @@ do_local_backup () {
 			$CURL -fsS --retry 4 "$HEALTHCHECK_URL"  > /dev/null
 		fi
 	fi
+}
+
+do_cleanup () {
+
+        . /etc/backup/local.config
+
+	$RESTIC check --cleanup-cache 
+}
+
+list_forget () {
+
+        . /etc/backup/local.config
+
+        $RESTIC forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12
+
+}
+
+do_forget () {
+
+	. /etc/backup/local.config
+
+	$RESTIC forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --prune
+
+}
+
+do_unlock () {
+	. /etc/backup/local.config
+
+        $RESTIC unlock
 }
 
 do_monitor () {
@@ -137,5 +174,3 @@ do_monitor () {
 
 check_config $@
 handle_params $@
-
-
