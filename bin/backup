@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 set -uo pipefail
 
 #backup li run 
@@ -210,5 +210,3 @@ do_monitor () {
 
 check_config $@
 handle_params $@
-
-
