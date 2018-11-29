@@ -1,11 +1,11 @@
-#!/bin/bash
+#! /bin/bash
 set -uo pipefail
 
 #backup li run 
 #backup li 
 
 display_usage() { 
-	echo "Usage: $0 <repo> (local|monitor|cleanup|unlock|forget|do_forget <host> <warning> <critical>|restic arguments)" >&2
+	echo "Usage: $0 <repo> (local|local_without_cache|monitor|cleanup|unlock|forget|do_forget <host> <warning> <critical>|restic arguments)" >&2
 } 
 
 if [ "$#" -lt 2 ]; then
@@ -53,6 +53,10 @@ handle_params () {
                 list_forget
 	elif [ $2 == "do_forget" ]; then
                 do_forget
+	elif [ $2 == "rebuild" ]; then
+                do_rebuild
+	elif [ $2 == "local_without_cache" ]; then
+                do_backup_without_cache
 	else
 		shift 1
 		$RESTIC $@
@@ -85,6 +89,31 @@ do_local_backup () {
 	fi
 }
 
+do_backup_without_cache () {
+        if [ ! -f /etc/backup/local.config ]; then
+                echo "local backup config file $/etc/backup/local.config not found!"
+                exit 1
+        fi
+
+        . /etc/backup/local.config
+
+        if [[ -x /etc/backup/local.pre ]]; then
+                /etc/backup/local.pre $TARGET
+        fi
+
+        $RESTIC --no-cache --exclude-file /etc/backup/local.exclude backup --hostname $BACKUP_HOSTNAME $BACKUP_DIR 
+
+        if [[ -x /etc/backup/local.post ]]; then
+                /etc/backup/local.post $TARGET
+        fi
+
+        if [[ -n "${HEALTHCHECK_URL:-}" ]]; then
+                if [[ -x $CURL ]]; then
+                        $CURL -fsS --retry 4 "$HEALTHCHECK_URL"  > /dev/null
+                fi
+        fi
+}
+
 do_cleanup () {
 
         . /etc/backup/local.config
@@ -98,6 +127,13 @@ list_forget () {
 
         $RESTIC forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12
 
+}
+
+do_rebuild () {
+
+	. /etc/backup/local.config
+
+	$RESTIC rebuild-index
 }
 
 do_forget () {
@@ -174,3 +210,5 @@ do_monitor () {
 
 check_config $@
 handle_params $@
+
+
