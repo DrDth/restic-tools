@@ -212,6 +212,11 @@ do_init () {
 
 	$RESTIC -r $RESTIC_REPOSITORY init
 
+	if [[ $? == '1' ]]; then
+	   echo 'Restic-Backup already initialized'
+	   exit 0
+	fi
+
 }
 
 
