@@ -223,7 +223,7 @@ do_init () {
 
 do_rebuild_index () {
 
-	$RESTIC rebuild-index
+	$RESTIC rebuild-index --no-cache
 
 }
 
