@@ -27,6 +27,11 @@ check_config() {
 	else
 		set -a
 		source $CONFIG
+
+		if [ ! $? -eq 0 ]; then
+			echo "There are issues with the configuration file"
+			exit 1
+		fi
 		set +a
         fi
 
