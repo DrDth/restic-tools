@@ -5,7 +5,7 @@ set -uo pipefail
 #backup li
 
 display_usage() {
-	echo "Usage: $0 <repo> (local|local_without_cache|monitor|cleanup|unlock|forget|do_forget|init <host> <warning> <critical>|restic arguments)" >&2
+	echo "Usage: $0 <repo> (local|local_without_cache|monitor|cleanup|unlock|forget|do_forget|init|rebuild_index <host> <warning> <critical>|restic arguments)" >&2
 }
 
 if [ "$#" -lt 2 ]; then
@@ -48,17 +48,19 @@ handle_params () {
 	elif [ $2 == "cleanup" ]; then
 		do_cleanup
 	elif [ $2 == "unlock" ]; then
-                do_unlock
+		do_unlock
 	elif [ $2 == "forget" ]; then
-                list_forget
+		list_forget
 	elif [ $2 == "do_forget" ]; then
-                do_forget
+		do_forget
 	elif [ $2 == "rebuild" ]; then
-                do_rebuild
+		do_rebuild
 	elif [ $2 == "local_without_cache" ]; then
-                do_backup_without_cache
+		do_backup_without_cache
 	elif [ $2 == "init" ]; then
-				do_init
+		do_init
+	elif [ $2 == "rebuild_index" ]; then
+		do_rebuild_index
 	else
 		shift 1
 		$RESTIC $@
@@ -219,6 +221,11 @@ do_init () {
 
 }
 
+do_rebuild_index () {
+
+	$RESTIC rebuild-index
+
+}
 
 
 check_config $@
